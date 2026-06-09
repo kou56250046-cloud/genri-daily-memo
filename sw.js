@@ -4,7 +4,7 @@
 // ============================================================
 
 const CACHE = 'kunidoku-v1';
-const CACHE_FILES = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+const CACHE_FILES = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png', './432hz.mp3'];
 
 let swCfg = {};  // SET_CFG メッセージで受け取る設定
 
