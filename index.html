@@ -545,6 +545,21 @@ body.theme-afternoon::before{background:radial-gradient(ellipse 90% 60% at 15% 2
 .graph-bar.k{background:var(--k)}
 .graph-bar.m{background:var(--m)}
 .graph-lbl{font-size:9px;color:var(--txt-3);text-align:center}
+
+/* ====== CALENDAR EDIT ====== */
+.cal-day:not(.other){cursor:pointer;border-radius:50%;transition:background .15s}
+.cal-day:not(.other):hover{background:rgba(255,255,255,.08)}
+.cal-day.future{cursor:default;opacity:.35;pointer-events:none}
+.cal-day.future:hover{background:none}
+.cal-edit-hint{font-size:10px;color:var(--txt-3);text-align:center;margin-top:8px}
+
+/* ====== EDIT MODAL ====== */
+.edit-modal-bg{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center}
+.edit-modal{background:linear-gradient(180deg,#0d1526 0%,#090e1d 100%);border:1px solid var(--border-hi);border-radius:var(--r);padding:24px 20px;width:calc(100% - 48px);max-width:340px;box-shadow:0 16px 48px rgba(0,0,0,.6)}
+.edit-modal-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.edit-modal-sub{font-size:13px;color:var(--txt-2);margin-bottom:20px;line-height:1.6}
+.edit-modal-btns{display:flex;gap:8px}
+.edit-modal-btns .btn{margin-bottom:0;flex:1}
 </style>
 </head>
 <body>
@@ -692,6 +707,7 @@ body.theme-afternoon::before{background:radial-gradient(ellipse 90% 60% at 15% 2
         <div class="leg-item"><div class="leg-dot" style="background:var(--k)"></div>こうへい</div>
         <div class="leg-item"><div class="leg-dot" style="background:var(--m)"></div>まりあ</div>
       </div>
+      <div class="cal-edit-hint">📝 日付をタップして自分の記録を追加・削除できます</div>
     </div>
 
     <!-- Monthly Graph -->
@@ -1079,9 +1095,11 @@ function renderCal() {
   for (let d = 1; d <= daysInM; d++) {
     const ds  = `${calY}-${pad(calM+1)}-${pad(d)}`;
     const el  = document.createElement('div');
-    const cls = 'cal-day' + (ds===today ? ' today' : '');
+    const isFuture = ds > today;
+    const cls = 'cal-day' + (ds===today ? ' today' : '') + (isFuture ? ' future' : '');
     el.className = cls;
     el.innerHTML = `<span class="cal-num">${d}</span>`;
+    if (!isFuture) el.onclick = () => editDay(ds);
 
     const kd = reads.husband.has(ds);
     const md = reads.wife.has(ds);
@@ -1326,6 +1344,47 @@ async function registerSW() {
     await navigator.serviceWorker.register('./sw.js');
     navigator.serviceWorker.ready.then(() => updateSWCfg());
   } catch {}
+}
+
+// ═══════════════════════════════════
+// CALENDAR EDIT
+// ═══════════════════════════════════
+function editDay(ds) {
+  if (!who) return;
+  const myDone = reads[who].has(ds);
+  const [, m, d] = ds.split('-');
+  const label = `${parseInt(m)}月${parseInt(d)}日`;
+  const name  = PEOPLE[who].name;
+
+  const bg = document.createElement('div');
+  bg.className = 'edit-modal-bg';
+  bg.innerHTML = `
+    <div class="edit-modal">
+      <div class="edit-modal-title">${label}の記録</div>
+      <div class="edit-modal-sub">
+        ${name}の記録：${myDone ? '✓ 完了' : '─ なし'}<br>
+        ${myDone ? 'この日の記録を削除しますか？' : 'この日の記録を追加しますか？'}
+      </div>
+      <div class="edit-modal-btns">
+        <button class="btn btn-s" id="em-cancel">キャンセル</button>
+        <button class="btn ${myDone ? 'btn-d' : 'btn-g'}" id="em-ok">
+          ${myDone ? '削除する' : '追加する'}
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(bg);
+
+  bg.querySelector('#em-cancel').onclick = () => bg.remove();
+  bg.querySelector('#em-ok').onclick = () => {
+    if (myDone) {
+      db.ref('readings/'+who+'/'+ds).remove();
+    } else {
+      db.ref('readings/'+who+'/'+ds).set(true);
+    }
+    bg.remove();
+  };
+  bg.onclick = e => { if (e.target === bg) bg.remove(); };
 }
 
 // ═══════════════════════════════════
