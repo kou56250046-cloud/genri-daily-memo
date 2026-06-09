@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>訓読トラッカー</title>
+<meta name="theme-color" content="#080d1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="訓読">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+/* ============================================================
+   DESIGN TOKENS  —  Deep Space × Frost Glass
+   ============================================================ */
+:root {
+  --bg-1: #080d1a;
+  --bg-2: #0f172a;
+  --bg-3: #1e1b4b;
+  --card: rgba(255,255,255,0.06);
+  --card-hi: rgba(255,255,255,0.10);
+  --border: rgba(255,255,255,0.09);
+  --border-hi: rgba(255,255,255,0.18);
+
+  --gold:  #f59e0b;
+  --gold2: #fbbf24;
+  --gold-glow: rgba(245,158,11,0.30);
+
+  --k: #60a5fa;        /* こうへい */
+  --k-bg: rgba(96,165,250,0.12);
+  --k-border: rgba(96,165,250,0.40);
+  --m: #f472b6;        /* まりあ */
+  --m-bg: rgba(244,114,182,0.12);
+  --m-border: rgba(244,114,182,0.40);
+
+  --txt: #f1f5f9;
+  --txt-2: rgba(241,245,249,0.55);
+  --txt-3: rgba(241,245,249,0.28);
+
+  --r: 20px;
+  --r2: 12px;
+  --font: 'Noto Sans JP', -apple-system, sans-serif;
+  --blur: blur(20px);
+}
+
+/* ============================================================
+   RESET
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font);color:var(--txt);
+  background:var(--bg-1);min-height:100%;
+  overflow-x:hidden;-webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+
+/* Background — stars + gradient */
+body::before{
+  content:'';position:fixed;inset:0;z-index:-2;
+  background:
+    radial-gradient(ellipse 90% 60% at 15% 20%,rgba(30,27,75,.85) 0%,transparent 65%),
+    radial-gradient(ellipse 70% 50% at 85% 75%,rgba(10,5,40,.9) 0%,transparent 65%),
+    linear-gradient(150deg,#080d1a 0%,#0d1426 45%,#110d2e 100%);
+}
+/* subtle star dots */
+body::after{
+  content:'';position:fixed;inset:0;z-index:-1;
+  background-image:
+    radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,.18) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 35%, rgba(255,255,255,.14) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 55% 10%, rgba(255,255,255,.20) 0%, transparent 100%),
+    radial-gradient(1px 1px at 75% 55%, rgba(255,255,255,.12) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 25%, rgba(255,255,255,.16) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 20% 80%, rgba(255,255,255,.10) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 85%, rgba(255,255,255,.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 65%, rgba(255,255,255,.12) 0%, transparent 100%);
+}
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+.screen{display:none;min-height:100svh;max-width:480px;margin:0 auto;flex-direction:column}
+.screen.active{display:flex}
+
+/* ============================================================
+   SETUP SCREEN
+   ============================================================ */
+#screen-setup{
+  padding:52px 24px 40px;align-items:center;justify-content:center;text-align:center;
+}
+.setup-icon{font-size:52px;margin-bottom:20px;animation:float 3s ease-in-out infinite}
+.setup-title{font-size:22px;font-weight:900;margin-bottom:8px}
+.setup-sub{font-size:13px;color:var(--txt-2);margin-bottom:28px;line-height:1.7}
+.setup-steps{text-align:left;width:100%;margin-bottom:20px}
+.setup-step{display:flex;gap:12px;margin-bottom:10px;align-items:flex-start}
+.step-num{
+  width:24px;height:24px;border-radius:50%;background:var(--gold);
+  color:#000;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px
+}
+.step-text{font-size:13px;color:var(--txt-2);line-height:1.5}
+.step-text a{color:var(--gold);text-decoration:none}
+textarea.cfg-in{
+  width:100%;background:rgba(0,0,0,.35);border:1px solid var(--border);
+  border-radius:var(--r2);color:var(--txt);font-family:monospace;
+  font-size:11px;padding:14px;resize:vertical;min-height:160px;
+  outline:none;margin-bottom:10px;line-height:1.5;
+}
+textarea.cfg-in:focus{border-color:var(--gold)}
+.setup-note{font-size:11px;color:var(--txt-3);margin-bottom:18px;line-height:1.6}
+#setup-err{color:#f87171;font-size:12px;margin-top:8px;text-align:center}
+
+/* ============================================================
+   IDENTITY SCREEN
+   ============================================================ */
+#screen-identity{
+  padding:64px 28px;align-items:center;justify-content:center;text-align:center;
+}
+.id-eyebrow{font-size:12px;color:var(--txt-3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px}
+.id-title{font-size:26px;font-weight:900;margin-bottom:10px}
+.id-sub{font-size:14px;color:var(--txt-2);margin-bottom:44px}
+.id-cards{display:flex;gap:14px;width:100%}
+.id-card{
+  flex:1;padding:28px 12px;
+  background:var(--card);border:2px solid var(--border);
+  border-radius:var(--r);cursor:pointer;
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+}
+.id-card[data-who="husband"]{--cc:var(--k);--cg:var(--k-bg);--cb:var(--k-border)}
+.id-card[data-who="wife"]{--cc:var(--m);--cg:var(--m-bg);--cb:var(--m-border)}
+.id-card:hover{border-color:var(--cb);background:var(--cg);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.id-card:active{transform:scale(.96)}
+.id-avatar{font-size:44px;line-height:1}
+.id-name{font-size:18px;font-weight:700;color:var(--cc)}
+.id-label{font-size:11px;color:var(--txt-3)}
+
+/* ============================================================
+   MAIN APP LAYOUT
+   ============================================================ */
+#screen-app{padding-bottom:40px}
+
+.app-hd{
+  padding:60px 20px 12px;
+  display:flex;align-items:flex-start;justify-content:space-between;
+}
+@supports(padding-top:env(safe-area-inset-top)){
+  .app-hd{padding-top:calc(env(safe-area-inset-top) + 20px)}
+  .conn-bar{padding-top:calc(env(safe-area-inset-top) + 6px)}
+}
+.hd-left{}
+.hd-eyebrow{font-size:10px;font-weight:600;color:var(--txt-3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
+.hd-date{font-size:20px;font-weight:700}
+.hd-right{display:flex;gap:8px;align-items:center}
+.who-badge{
+  padding:5px 13px;border-radius:100px;
+  font-size:12px;font-weight:700;border:1.5px solid;
+  transition:all .3s;
+}
+.who-badge.husband{color:var(--k);border-color:var(--k);background:var(--k-bg)}
+.who-badge.wife{color:var(--m);border-color:var(--m);background:var(--m-bg)}
+.icon-btn{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--card);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:17px;transition:background .2s;
+}
+.icon-btn:hover{background:var(--card-hi)}
+
+.app-body{padding:0 14px}
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px 16px;margin-bottom:10px;
+  backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  animation:cardUp .5s ease backwards;
+}
+.card:nth-child(1){animation-delay:.04s}
+.card:nth-child(2){animation-delay:.12s}
+.card:nth-child(3){animation-delay:.20s}
+.card:nth-child(4){animation-delay:.27s}
+.card:nth-child(5){animation-delay:.34s}
+.c-label{
+  font-size:10px;font-weight:700;color:var(--txt-3);
+  text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px;
+}
+
+/* ============================================================
+   TODAY STATUS CARD
+   ============================================================ */
+.today-row{display:flex;gap:10px}
+.p-stat{
+  flex:1;text-align:center;padding:14px 8px;
+  border-radius:var(--r2);border:1px solid var(--border);
+  transition:all .4s ease;position:relative;overflow:hidden;
+}
+.p-stat.done-k{background:var(--k-bg);border-color:var(--k-border)}
+.p-stat.done-m{background:var(--m-bg);border-color:var(--m-border)}
+.p-name{font-size:11px;color:var(--txt-2);margin-bottom:9px;font-weight:500}
+.p-icon{font-size:26px;transition:transform .5s cubic-bezier(.34,1.56,.64,1);display:block}
+.p-stat.done-k .p-icon,.p-stat.done-m .p-icon{transform:scale(1.12)}
+.p-txt{font-size:11px;margin-top:6px;color:var(--txt-2)}
+.p-stat.done-k .p-txt{color:var(--k);font-weight:700}
+.p-stat.done-m .p-txt{color:var(--m);font-weight:700}
+
+/* ============================================================
+   CHECK BUTTON
+   ============================================================ */
+.check-wrap{padding:6px 14px 2px;text-align:center}
+.check-btn{
+  width:100%;padding:20px 16px;border-radius:100px;border:none;
+  cursor:pointer;font-family:var(--font);font-size:16px;font-weight:700;
+  position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--gold2) 0%,var(--gold) 50%,#d97706 100%);
+  color:#000;letter-spacing:.02em;
+  box-shadow:0 4px 28px var(--gold-glow);
+  animation:btnPulse 2.5s ease-in-out infinite;
+  transition:all .3s ease;
+}
+.check-btn:disabled{
+  background:rgba(255,255,255,0.07);
+  color:var(--txt-2);box-shadow:none;animation:none;cursor:default;
+  border:1px solid var(--border);
+}
+.check-btn.k-done:disabled{
+  background:var(--k-bg);border-color:var(--k-border);color:var(--k);
+}
+.check-btn.m-done:disabled{
+  background:var(--m-bg);border-color:var(--m-border);color:var(--m);
+}
+.check-btn:not(:disabled):active{transform:scale(.97)}
+.ripple{
+  position:absolute;border-radius:50%;pointer-events:none;
+  background:rgba(255,255,255,.45);
+  animation:ripple .65s ease-out forwards;
+}
+.undo-btn{
+  background:none;border:none;cursor:pointer;
+  color:var(--txt-3);font-size:12px;font-family:var(--font);
+  padding:8px 16px;text-decoration:underline;transition:color .2s;
+}
+.undo-btn:hover{color:var(--txt-2)}
+
+/* ============================================================
+   精誠期間 CARD
+   ============================================================ */
+.sp-hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.sp-name{font-size:15px;font-weight:700}
+.sp-pos{font-size:12px;color:var(--txt-2)}
+.sp-bar-wrap{height:6px;border-radius:100px;background:rgba(255,255,255,.07);margin-bottom:14px;overflow:hidden}
+.sp-bar-fill{
+  height:100%;border-radius:100px;width:0%;
+  background:linear-gradient(90deg,var(--gold2),var(--gold));
+  transition:width 1.2s cubic-bezier(.4,0,.2,1);
+}
+.sp-stats{display:flex;gap:8px}
+.sp-stat{
+  flex:1;padding:11px 8px;border-radius:var(--r2);
+  background:rgba(0,0,0,.22);text-align:center;
+}
+.sp-stat-name{font-size:10px;font-weight:600;margin-bottom:4px}
+.sp-stat-name.k{color:var(--k)}.sp-stat-name.m{color:var(--m)}
+.sp-stat-count{font-size:22px;font-weight:900;line-height:1}
+.sp-stat-sub{font-size:10px;color:var(--txt-3);margin-top:2px}
+.sp-footer{
+  text-align:center;margin-top:12px;
+  font-size:13px;color:var(--txt-2);
+}
+.sp-footer b{color:var(--gold);font-size:16px}
+.no-sp{text-align:center;padding:10px 0;color:var(--txt-2);font-size:14px}
+.set-sp-btn{
+  display:block;margin:10px auto 0;
+  background:none;border:1px solid var(--border-hi);
+  color:var(--gold);font-family:var(--font);
+  font-size:12px;padding:7px 20px;border-radius:100px;
+  cursor:pointer;transition:all .2s;
+}
+.set-sp-btn:hover{background:var(--gold-glow);border-color:var(--gold)}
+
+/* ============================================================
+   STREAK CARD
+   ============================================================ */
+.streak-row{display:flex;gap:10px}
+.str-item{
+  flex:1;padding:14px 8px;border-radius:var(--r2);
+  background:rgba(0,0,0,.20);text-align:center;
+}
+.str-name{font-size:10px;font-weight:700;margin-bottom:7px;letter-spacing:.05em}
+.str-name.k{color:var(--k)}.str-name.m{color:var(--m)}
+.str-num{font-size:36px;font-weight:900;line-height:1;transition:transform .2s}
+.str-label{font-size:10px;color:var(--txt-3);margin-top:3px}
+.str-fire{font-size:18px;margin-top:4px;min-height:24px}
+
+/* ============================================================
+   CALENDAR CARD
+   ============================================================ */
+.cal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav{
+  background:none;border:1px solid var(--border);color:var(--txt);
+  width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.cal-nav:hover{background:var(--card-hi)}
+.cal-nav:disabled{opacity:.2;cursor:default}
+.cal-month{font-size:14px;font-weight:700}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dow{text-align:center;font-size:9px;color:var(--txt-3);padding:3px 0;font-weight:600}
+.cal-day{
+  aspect-ratio:1;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:11px;position:relative;
+}
+.cal-day.other{color:var(--txt-3)}
+.cal-day.today{color:var(--gold);font-weight:700}
+.cal-day.today .cal-num::after{
+  content:'';position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;border-radius:50%;background:var(--gold);
+}
+.cal-num{position:relative}
+.cal-dots{display:flex;gap:2px;margin-top:2px}
+.cal-dot{
+  width:5px;height:5px;border-radius:50%;
+  animation:dotIn .25s ease backwards;
+}
+.cal-dot.k{background:var(--k)}.cal-dot.m{background:var(--m)}
+.cal-legend{
+  display:flex;gap:14px;margin-top:10px;justify-content:center;
+}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt-2)}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+
+/* ============================================================
+   CONNECTION BAR
+   ============================================================ */
+.conn-bar{
+  position:fixed;top:0;left:0;right:0;z-index:80;
+  padding:7px 16px;background:rgba(220,38,38,.9);
+  text-align:center;font-size:12px;
+  transform:translateY(-100%);transition:transform .3s ease;
+  backdrop-filter:var(--blur);
+}
+.conn-bar.show{transform:translateY(0)}
+
+/* ============================================================
+   CONFETTI
+   ============================================================ */
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:200;overflow:hidden}
+.cp{
+  position:absolute;top:-12px;border-radius:2px;
+  animation:cpFall linear forwards;
+}
+
+/* ============================================================
+   SETTINGS DRAWER
+   ============================================================ */
+.drw-overlay{
+  display:none;position:fixed;inset:0;z-index:90;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(4px);
+}
+.drw-overlay.open{display:block}
+.drw{
+  position:fixed;top:0;right:0;bottom:0;z-index:91;
+  width:88%;max-width:360px;
+  background:linear-gradient(180deg,#0d1526 0%,#0a0f1e 100%);
+  border-left:1px solid var(--border-hi);
+  transform:translateX(102%);
+  transition:transform .36s cubic-bezier(.4,0,.2,1);
+  overflow-y:auto;padding:56px 22px 48px;
+}
+.drw.open{transform:translateX(0)}
+.drw-title{font-size:19px;font-weight:900;margin-bottom:24px}
+.drw-close{
+  position:absolute;top:18px;right:18px;
+  background:var(--card);border:1px solid var(--border);
+  width:34px;height:34px;border-radius:50%;
+  cursor:pointer;font-size:17px;color:var(--txt);
+  display:flex;align-items:center;justify-content:center;
+}
+.drw-sec{margin-bottom:24px}
+.drw-sec-title{
+  font-size:10px;color:var(--txt-3);
+  text-transform:uppercase;letter-spacing:.12em;
+  margin-bottom:10px;font-weight:700;
+}
+.drw-div{height:1px;background:var(--border);margin:4px 0 20px}
+
+/* identity switch */
+.id-sw{display:flex;gap:8px}
+.id-sw-btn{
+  flex:1;padding:11px 8px;border-radius:var(--r2);
+  border:2px solid var(--border);background:transparent;
+  color:var(--txt);font-family:var(--font);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s;text-align:center;
+}
+.id-sw-btn.active.husband{border-color:var(--k);color:var(--k);background:var(--k-bg)}
+.id-sw-btn.active.wife{border-color:var(--m);color:var(--m);background:var(--m-bg)}
+
+/* notif toggle row */
+.notif-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:13px;border-radius:var(--r2);background:rgba(0,0,0,.22);margin-bottom:8px;
+}
+.notif-lbl{font-size:13px}
+.notif-sub{font-size:11px;color:var(--txt-3);margin-top:2px}
+.toggle{
+  width:44px;height:24px;border-radius:100px;
+  background:rgba(255,255,255,.1);cursor:pointer;
+  position:relative;transition:background .3s;border:none;flex-shrink:0;
+}
+.toggle::after{
+  content:'';position:absolute;top:3px;left:3px;
+  width:18px;height:18px;border-radius:50%;
+  background:rgba(255,255,255,.5);transition:all .3s;
+}
+.toggle.on{background:var(--gold)}
+.toggle.on::after{left:23px;background:#000}
+.time-row{display:flex;gap:8px;align-items:center;padding:6px 13px}
+.time-lbl{font-size:12px;color:var(--txt-2);flex:1}
+
+/* form */
+.fg{margin-bottom:12px}
+.fg label{font-size:11px;color:var(--txt-2);margin-bottom:5px;display:block}
+input[type=text],input[type=date],input[type=time]{
+  width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);
+  color:var(--txt);border-radius:8px;padding:11px 12px;
+  font-size:13px;font-family:var(--font);outline:none;
+}
+input:focus{border-color:var(--gold)}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) opacity(.4)}
+
+/* buttons */
+.btn{
+  width:100%;padding:13px;border-radius:100px;border:none;
+  cursor:pointer;font-family:var(--font);font-size:14px;font-weight:700;
+  transition:all .2s;margin-bottom:8px;
+}
+.btn-g{background:linear-gradient(135deg,var(--gold2),#d97706);color:#000}
+.btn-g:hover{box-shadow:0 4px 16px var(--gold-glow)}
+.btn-g:active{transform:scale(.98)}
+.btn-s{background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--txt)}
+.btn-d{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);color:#f87171}
+
+.st-msg{text-align:center;font-size:12px;color:var(--txt-2);padding:6px;min-height:24px}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes cardUp{
+  from{opacity:0;transform:translateY(22px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-8px)}
+}
+@keyframes btnPulse{
+  0%,100%{box-shadow:0 4px 28px var(--gold-glow)}
+  50%{box-shadow:0 4px 40px rgba(245,158,11,.48),0 0 0 6px rgba(245,158,11,0)}
+}
+@keyframes ripple{
+  from{transform:scale(0);opacity:1}
+  to{transform:scale(5);opacity:0}
+}
+@keyframes cpFall{
+  0%{transform:translateY(0) rotate(0deg);opacity:1}
+  100%{transform:translateY(110vh) rotate(800deg);opacity:0}
+}
+@keyframes dotIn{
+  from{opacity:0;transform:scale(0)}
+  to{opacity:1;transform:scale(1)}
+}
+@keyframes checkBounce{
+  0%{transform:scale(1)}
+  35%{transform:scale(1.35)}
+  60%{transform:scale(.9)}
+  80%{transform:scale(1.12)}
+  100%{transform:scale(1)}
+}
+.do-bounce{animation:checkBounce .6s cubic-bezier(.34,1.56,.64,1) forwards}
+</style>
+</head>
+<body>
+
+<div class="conn-bar" id="conn-bar">📡 オフライン — 再接続を待っています</div>
+<div class="confetti-wrap" id="confetti-wrap"></div>
+
+<!-- ==================== SETUP ==================== -->
+<div id="screen-setup" class="screen">
+  <div class="setup-icon">📖</div>
+  <div class="setup-title">Firebaseの設定</div>
+  <div class="setup-sub">初回のみ設定が必要です。<br>一度保存すれば次回からは自動接続します。</div>
+  <div class="setup-steps">
+    <div class="setup-step">
+      <div class="step-num">1</div>
+      <div class="step-text"><a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> でプロジェクトを作成</div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">2</div>
+      <div class="step-text">「Realtime Database」を作成（テストモードで開始）</div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">3</div>
+      <div class="step-text">プロジェクトの設定 →「ウェブアプリを追加」→ 設定オブジェクトをコピー</div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">4</div>
+      <div class="step-text">下のボックスに貼り付けて「保存」を押す</div>
+    </div>
+  </div>
+  <textarea class="cfg-in" id="cfg-in"
+    placeholder='const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "yourapp.firebaseapp.com",
+  databaseURL: "https://yourapp-default-rtdb.firebaseio.com",
+  projectId: "yourapp",
+  storageBucket: "yourapp.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123:web:abc"
+};'></textarea>
+  <div class="setup-note">⚠️ <strong>databaseURL</strong> が含まれていることをご確認ください</div>
+  <button class="btn btn-g" onclick="saveConfig()">保存してはじめる →</button>
+  <div id="setup-err"></div>
+</div>
+
+<!-- ==================== IDENTITY ==================== -->
+<div id="screen-identity" class="screen">
+  <div class="id-eyebrow">原理講論 訓読トラッカー</div>
+  <div class="id-title">あなたはどちら？</div>
+  <div class="id-sub">このスマホで使う名前を選んでください</div>
+  <div class="id-cards">
+    <div class="id-card" data-who="husband" onclick="setWho('husband')">
+      <div class="id-avatar">👨</div>
+      <div class="id-name">こうへい</div>
+      <div class="id-label">夫</div>
+    </div>
+    <div class="id-card" data-who="wife" onclick="setWho('wife')">
+      <div class="id-avatar">👩</div>
+      <div class="id-name">まりあ</div>
+      <div class="id-label">妻</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MAIN APP ==================== -->
+<div id="screen-app" class="screen">
+
+  <header class="app-hd">
+    <div class="hd-left">
+      <div class="hd-eyebrow">原理講論 訓読</div>
+      <div class="hd-date" id="hd-date">──</div>
+    </div>
+    <div class="hd-right">
+      <div class="who-badge" id="who-badge">──</div>
+      <div class="icon-btn" onclick="openDrw()">⚙️</div>
+    </div>
+  </header>
+
+  <div class="app-body">
+
+    <!-- Today status -->
+    <div class="card">
+      <div class="c-label">今日の状況</div>
+      <div class="today-row">
+        <div class="p-stat" id="ps-k">
+          <div class="p-name">こうへい</div>
+          <span class="p-icon" id="pi-k">○</span>
+          <div class="p-txt" id="pt-k">まだ</div>
+        </div>
+        <div class="p-stat" id="ps-m">
+          <div class="p-name">まりあ</div>
+          <span class="p-icon" id="pi-m">○</span>
+          <div class="p-txt" id="pt-m">まだ</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Check button -->
+    <div class="check-wrap">
+      <button class="check-btn" id="check-btn" onclick="doCheck(event)">
+        今日の訓読を完了する 📖
+      </button>
+      <button class="undo-btn" id="undo-btn" style="display:none" onclick="undoCheck()">取り消す</button>
+    </div>
+
+    <!-- 精誠期間 -->
+    <div class="card" id="sp-card">
+      <div class="c-label">精誠期間</div>
+      <div id="sp-body"></div>
+    </div>
+
+    <!-- Streak -->
+    <div class="card">
+      <div class="c-label">連続記録</div>
+      <div class="streak-row">
+        <div class="str-item">
+          <div class="str-name k">こうへい</div>
+          <div class="str-num" id="str-k">0</div>
+          <div class="str-label">日連続</div>
+          <div class="str-fire" id="fire-k"></div>
+        </div>
+        <div class="str-item">
+          <div class="str-name m">まりあ</div>
+          <div class="str-num" id="str-m">0</div>
+          <div class="str-label">日連続</div>
+          <div class="str-fire" id="fire-m"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="card">
+      <div class="cal-hd">
+        <button class="cal-nav" id="cal-prev" onclick="moveCal(-1)">‹</button>
+        <div class="cal-month" id="cal-month">──</div>
+        <button class="cal-nav" id="cal-next" onclick="moveCal(1)">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-legend">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--k)"></div>こうへい</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--m)"></div>まりあ</div>
+      </div>
+    </div>
+
+  </div><!-- /app-body -->
+</div><!-- /screen-app -->
+
+<!-- ==================== SETTINGS DRAWER ==================== -->
+<div class="drw-overlay" id="drw-overlay" onclick="closeDrw()"></div>
+<div class="drw" id="drw">
+  <div class="drw-close" onclick="closeDrw()">×</div>
+  <div class="drw-title">⚙️ 設定</div>
+
+  <!-- Identity -->
+  <div class="drw-sec">
+    <div class="drw-sec-title">あなたは誰？</div>
+    <div class="id-sw">
+      <button class="id-sw-btn husband" id="sw-k" onclick="switchWho('husband')">👨 こうへい</button>
+      <button class="id-sw-btn wife"    id="sw-m" onclick="switchWho('wife')">👩 まりあ</button>
+    </div>
+  </div>
+
+  <div class="drw-div"></div>
+
+  <!-- 精誠期間 -->
+  <div class="drw-sec">
+    <div class="drw-sec-title">精誠期間の設定</div>
+    <div class="fg">
+      <label>期間名（例: 5月の精誠期間）</label>
+      <input type="text" id="sp-name" placeholder="精誠期間の名前">
+    </div>
+    <div class="fg">
+      <label>開始日</label>
+      <input type="date" id="sp-start">
+    </div>
+    <div class="fg">
+      <label>終了日</label>
+      <input type="date" id="sp-end">
+    </div>
+    <button class="btn btn-g" onclick="saveSP()">精誠期間を設定する</button>
+    <button class="btn btn-d" onclick="clearSP()">精誠期間をクリアする</button>
+    <div class="st-msg" id="sp-msg"></div>
+  </div>
+
+  <div class="drw-div"></div>
+
+  <!-- Notifications -->
+  <div class="drw-sec">
+    <div class="drw-sec-title">リマインダー通知</div>
+    <div class="notif-row">
+      <div>
+        <div class="notif-lbl">毎日リマインダー</div>
+        <div class="notif-sub">訓読を忘れたときに通知します</div>
+      </div>
+      <button class="toggle" id="notif-tog" onclick="toggleNotif()"></button>
+    </div>
+    <div class="time-row" id="time-row" style="display:none">
+      <div class="time-lbl">通知時刻</div>
+      <input type="time" id="rem-time" value="07:00" onchange="saveRemTime()">
+    </div>
+    <div class="st-msg" id="notif-msg"></div>
+  </div>
+
+  <div class="drw-div"></div>
+
+  <div class="drw-sec">
+    <div class="drw-sec-title">詳細設定</div>
+    <button class="btn btn-s" onclick="resetCfg()" style="font-size:12px">Firebase設定をリセット</button>
+  </div>
+</div>
+
+<!-- ==================== SCRIPT ==================== -->
+<script>
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+let db = null;
+let who = null;               // 'husband' | 'wife'
+let reads = { husband: new Set(), wife: new Set() };
+let sp = null;                // {name, start, end} | null
+let calY, calM;               // calendar view
+let notifOn = false;
+let firstLoad = true;
+
+const PEOPLE = {
+  husband: { name: 'こうへい', emoji: '👨' },
+  wife:    { name: 'まりあ',   emoji: '👩' }
+};
+
+// ═══════════════════════════════════
+// DATE (JST)
+// ═══════════════════════════════════
+const jstNow   = () => new Date(Date.now() + 9*3600*1000);
+const toStr    = d => { const j=new Date(d.getTime()); return `${j.getUTCFullYear()}-${pad(j.getUTCMonth()+1)}-${pad(j.getUTCDate())}`; };
+const todayStr = () => toStr(jstNow());
+const pad      = n => String(n).padStart(2,'0');
+const msDiff   = (a,b) => Math.round((new Date(b+'T00:00:00Z')-new Date(a+'T00:00:00Z'))/86400000);
+const addDay   = (d,n) => { const r=new Date(d); r.setUTCDate(r.getUTCDate()+n); return r; };
+const ms2str   = d => `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
+
+// ═══════════════════════════════════
+// FIREBASE CONFIG
+// ═══════════════════════════════════
+function saveConfig() {
+  const raw = document.getElementById('cfg-in').value.trim();
+  const err = document.getElementById('setup-err');
+  err.textContent = '';
+
+  let cfg = null;
+  try { cfg = JSON.parse(raw); } catch {}
+
+  if (!cfg) {
+    // Extract object from JS declaration
+    const m = raw.replace(/\/\/.*/g,'').match(/\{[\s\S]*\}/);
+    if (m) {
+      try {
+        const s = m[0]
+          .replace(/,\s*([}\]])/g,'$1')
+          .replace(/^\s*([a-zA-Z_]\w*)\s*:/gm,'"$1":');
+        cfg = JSON.parse(s);
+      } catch {}
+    }
+  }
+
+  if (!cfg || !cfg.apiKey) { err.textContent = '⚠️ 設定の解析に失敗しました。Firebaseコンソールからそのままコピーしてください。'; return; }
+  if (!cfg.databaseURL)    { err.textContent = '⚠️ databaseURL が見つかりません。Realtime Database を作成してから設定をコピーしてください。'; return; }
+
+  localStorage.setItem('fb_cfg', JSON.stringify(cfg));
+  initFB(cfg);
+}
+
+function resetCfg() {
+  if (confirm('Firebase設定を削除しますか？')) { localStorage.removeItem('fb_cfg'); location.reload(); }
+}
+
+function initFB(cfg) {
+  try {
+    if (firebase.apps.length) firebase.app().delete();
+    firebase.initializeApp(cfg);
+    db = firebase.database();
+
+    db.ref('.info/connected').on('value', s => {
+      document.getElementById('conn-bar').classList.toggle('show', s.val()===false);
+    });
+
+    who = localStorage.getItem('who');
+    showScreen(who ? 'app' : 'identity');
+    if (who) startApp();
+  } catch(e) {
+    document.getElementById('setup-err').textContent = 'エラー: '+e.message;
+  }
+}
+
+// ═══════════════════════════════════
+// SCREENS
+// ═══════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+
+function setWho(w) {
+  localStorage.setItem('who', w);
+  who = w;
+  showScreen('app');
+  startApp();
+}
+
+// ═══════════════════════════════════
+// APP START
+// ═══════════════════════════════════
+function startApp() {
+  const now = jstNow();
+  const DOW = ['日','月','火','水','木','金','土'];
+  document.getElementById('hd-date').textContent =
+    `${now.getUTCMonth()+1}月${now.getUTCDate()}日（${DOW[new Date().getDay()]}）`;
+
+  calY = now.getUTCFullYear();
+  calM = now.getUTCMonth();
+
+  updateBadge();
+
+  notifOn = localStorage.getItem('notif_on') === 'true';
+  document.getElementById('rem-time').value = localStorage.getItem('rem_time') || '07:00';
+  updateNotifUI();
+  updateDrw();
+
+  // Firebase listeners
+  db.ref('readings').on('value', snap => {
+    const d = snap.val() || {};
+    reads.husband = new Set(Object.keys(d.husband || {}));
+    reads.wife    = new Set(Object.keys(d.wife    || {}));
+    renderAll();
+    if (firstLoad) firstLoad = false;
+  });
+
+  db.ref('seijou_kikan').on('value', snap => {
+    const d = snap.val();
+    sp = d?.name ? d : null;
+    renderSP();
+    if (sp) {
+      document.getElementById('sp-name').value  = sp.name  || '';
+      document.getElementById('sp-start').value = sp.start || '';
+      document.getElementById('sp-end').value   = sp.end   || '';
+    }
+  });
+
+  registerSW();
+}
+
+function updateBadge() {
+  const b = document.getElementById('who-badge');
+  b.textContent = PEOPLE[who].emoji + ' ' + PEOPLE[who].name;
+  b.className = 'who-badge ' + who;
+}
+
+// ═══════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════
+let _prevBoth = false;
+function renderAll() {
+  const today = todayStr();
+  const kDone = reads.husband.has(today);
+  const mDone = reads.wife.has(today);
+  const bothNow = kDone && mDone;
+
+  // Today cards
+  setPersonStatus('k', kDone, 'husband');
+  setPersonStatus('m', mDone, 'wife');
+
+  // Confetti if both just completed
+  if (!firstLoad && bothNow && !_prevBoth) launchConfetti();
+  _prevBoth = bothNow;
+
+  renderCheckBtn();
+  renderStreak();
+  renderCal();
+}
+
+function setPersonStatus(id, done, who2) {
+  const ps   = document.getElementById('ps-'+id);
+  const icon = document.getElementById('pi-'+id);
+  const txt  = document.getElementById('pt-'+id);
+  const cls  = done ? 'done-'+id : '';
+
+  if (done && !ps.classList.contains('done-'+id)) {
+    icon.classList.add('do-bounce');
+    setTimeout(() => icon.classList.remove('do-bounce'), 700);
+  }
+
+  ps.className = 'p-stat' + (cls ? ' '+cls : '');
+  icon.textContent = done ? '✓' : '○';
+  txt.textContent  = done ? '完了！' : 'まだ';
+}
+
+// ─── Check button ───
+function renderCheckBtn() {
+  const done = reads[who].has(todayStr());
+  const btn  = document.getElementById('check-btn');
+  const undo = document.getElementById('undo-btn');
+  const cls  = who === 'wife' ? 'm-done' : 'k-done';
+
+  btn.disabled = done;
+  undo.style.display = done ? 'block' : 'none';
+
+  if (done) {
+    btn.textContent = PEOPLE[who].emoji + ' 読んだ！ ✓';
+    btn.className = 'check-btn ' + cls;
+  } else {
+    btn.textContent = '今日の訓読を完了する 📖';
+    btn.className = 'check-btn';
+  }
+}
+
+// ─── Streak ───
+function calcStreak(set) {
+  const today = todayStr();
+  let d = new Date(today+'T00:00:00Z');
+  if (!set.has(today)) d = new Date(d.getTime() - 86400000);
+  let n = 0;
+  while (set.has(ms2str(d))) { n++; d = new Date(d.getTime()-86400000); }
+  return n;
+}
+
+let _strK = -1, _strM = -1;
+function renderStreak() {
+  const sk = calcStreak(reads.husband);
+  const sm = calcStreak(reads.wife);
+  if (sk !== _strK) { countUp('str-k', _strK<0?0:_strK, sk); _strK = sk; }
+  if (sm !== _strM) { countUp('str-m', _strM<0?0:_strM, sm); _strM = sm; }
+  document.getElementById('fire-k').textContent = sk >= 3 ? '🔥' : '';
+  document.getElementById('fire-m').textContent = sm >= 3 ? '🔥' : '';
+}
+
+function countUp(id, from, to) {
+  const el = document.getElementById(id);
+  if (from === to) { el.textContent = to; return; }
+  const steps = 20, dur = 600, iv = dur/steps;
+  let s = 0;
+  const t = setInterval(() => {
+    s++;
+    el.textContent = Math.round(from + (to-from)*(s/steps));
+    if (s >= steps) { clearInterval(t); el.textContent = to; }
+  }, iv);
+}
+
+// ─── Calendar ───
+function renderCal() {
+  const today = todayStr();
+  const now = jstNow();
+  const isCur = calY===now.getUTCFullYear() && calM===now.getUTCMonth();
+  document.getElementById('cal-next').disabled = isCur;
+
+  const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('cal-month').textContent = `${calY}年 ${MONTHS[calM]}`;
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  ['日','月','火','水','木','金','土'].forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-dow'; el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstDOW = new Date(Date.UTC(calY, calM, 1)).getUTCDay();
+  const daysInM  = new Date(Date.UTC(calY, calM+1, 0)).getUTCDate();
+  const prevDays = new Date(Date.UTC(calY, calM, 0)).getUTCDate();
+
+  for (let i = firstDOW-1; i >= 0; i--) {
+    const el = document.createElement('div');
+    el.className = 'cal-day other'; el.innerHTML = `<span class="cal-num">${prevDays-i}</span>`;
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInM; d++) {
+    const ds  = `${calY}-${pad(calM+1)}-${pad(d)}`;
+    const el  = document.createElement('div');
+    const cls = 'cal-day' + (ds===today ? ' today' : '');
+    el.className = cls;
+    el.innerHTML = `<span class="cal-num">${d}</span>`;
+
+    const kd = reads.husband.has(ds);
+    const md = reads.wife.has(ds);
+    if (kd || md) {
+      const dots = document.createElement('div');
+      dots.className = 'cal-dots';
+      if (kd) { const dk = document.createElement('div'); dk.className='cal-dot k'; dots.appendChild(dk); }
+      if (md) { const dm = document.createElement('div'); dm.className='cal-dot m'; dots.appendChild(dm); }
+      el.appendChild(dots);
+    }
+    grid.appendChild(el);
+  }
+
+  const total = firstDOW + daysInM;
+  const rem   = total % 7 === 0 ? 0 : 7-(total%7);
+  for (let i = 1; i <= rem; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day other'; el.innerHTML = `<span class="cal-num">${i}</span>`;
+    grid.appendChild(el);
+  }
+}
+
+function moveCal(d) {
+  calM += d;
+  if (calM < 0)  { calM = 11; calY--; }
+  if (calM > 11) { calM = 0;  calY++; }
+  renderCal();
+}
+
+// ─── 精誠期間 ───
+function renderSP() {
+  const el = document.getElementById('sp-body');
+  const today = todayStr();
+
+  if (!sp) {
+    el.innerHTML = `
+      <div class="no-sp">精誠期間は設定されていません</div>
+      <button class="set-sp-btn" onclick="openDrw()">⊕ 設定する</button>
+    `;
+    return;
+  }
+
+  const { name, start, end } = sp;
+  const totalDays = msDiff(start, end) + 1;
+
+  // Compute elapsed days within period up to today
+  const periodStart = start;
+  const periodEnd   = today <= end ? today : end;
+  const elapsed     = today < start ? 0 : msDiff(start, periodEnd) + 1;
+
+  // Period days array
+  const pDays = [];
+  let d = new Date(start+'T00:00:00Z');
+  const ems = new Date(periodEnd+'T00:00:00Z').getTime();
+  while (d.getTime() <= ems) { pDays.push(ms2str(d)); d = addDay(d, 1); }
+
+  const kCount = pDays.filter(s => reads.husband.has(s)).length;
+  const mCount = pDays.filter(s => reads.wife.has(s)).length;
+
+  let dayNum = today < start ? 0 : msDiff(start, today) + 1;
+  if (today > end) dayNum = totalDays;
+
+  const pct = Math.min(100, Math.round((dayNum/totalDays)*100));
+
+  let footer = '';
+  if (today < start) {
+    footer = `<div class="sp-footer">開始まで <b>${msDiff(today,start)}</b> 日</div>`;
+  } else if (today > end) {
+    footer = `<div class="sp-footer">精誠期間 終了 ✨</div>`;
+  } else {
+    footer = `<div class="sp-footer">あと <b>${msDiff(today,end)}</b> 日</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="sp-hd">
+      <div class="sp-name">${name}</div>
+      <div class="sp-pos">${dayNum>0?dayNum+'日目':''} / ${totalDays}日間</div>
+    </div>
+    <div class="sp-bar-wrap"><div class="sp-bar-fill" id="sp-fill" style="width:0%"></div></div>
+    <div class="sp-stats">
+      <div class="sp-stat">
+        <div class="sp-stat-name k">こうへい</div>
+        <div class="sp-stat-count">${kCount}</div>
+        <div class="sp-stat-sub">/ ${elapsed}日 達成</div>
+      </div>
+      <div class="sp-stat">
+        <div class="sp-stat-name m">まりあ</div>
+        <div class="sp-stat-count">${mCount}</div>
+        <div class="sp-stat-sub">/ ${elapsed}日 達成</div>
+      </div>
+    </div>
+    ${footer}
+  `;
+
+  requestAnimationFrame(() => {
+    setTimeout(() => { const f=document.getElementById('sp-fill'); if(f)f.style.width=pct+'%'; }, 80);
+  });
+}
+
+// ═══════════════════════════════════
+// CHECK / UNDO
+// ═══════════════════════════════════
+function doCheck(e) {
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const rp = document.createElement('span');
+  rp.className = 'ripple';
+  rp.style.cssText = `left:${x}px;top:${y}px;width:60px;height:60px;margin:-30px 0 0 -30px`;
+  btn.appendChild(rp);
+  setTimeout(() => rp.remove(), 700);
+
+  db.ref(`readings/${who}/${todayStr()}`).set(true);
+}
+
+function undoCheck() {
+  db.ref(`readings/${who}/${todayStr()}`).remove();
+}
+
+// ═══════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════
+function launchConfetti() {
+  const wrap = document.getElementById('confetti-wrap');
+  wrap.innerHTML = '';
+  const cols = ['#f59e0b','#fbbf24','#60a5fa','#f472b6','#34d399','#a78bfa','#fff'];
+  for (let i = 0; i < 72; i++) {
+    const p = document.createElement('div');
+    p.className = 'cp';
+    const s = 5 + Math.random()*9;
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      width:${s}px;height:${s}px;
+      border-radius:${Math.random()>.5?'50%':'3px'};
+      background:${cols[Math.floor(Math.random()*cols.length)]};
+      animation-duration:${1.6+Math.random()*2.2}s;
+      animation-delay:${Math.random()*.6}s;
+    `;
+    wrap.appendChild(p);
+  }
+  setTimeout(() => { wrap.innerHTML = ''; }, 5000);
+}
+
+// ═══════════════════════════════════
+// SETTINGS DRAWER
+// ═══════════════════════════════════
+function openDrw()  { document.getElementById('drw-overlay').classList.add('open'); document.getElementById('drw').classList.add('open'); updateDrw(); }
+function closeDrw() { document.getElementById('drw-overlay').classList.remove('open'); document.getElementById('drw').classList.remove('open'); }
+
+function updateDrw() {
+  document.getElementById('sw-k').className = 'id-sw-btn husband' + (who==='husband' ? ' active' : '');
+  document.getElementById('sw-m').className = 'id-sw-btn wife'    + (who==='wife'    ? ' active' : '');
+}
+
+function switchWho(w) {
+  who = w; localStorage.setItem('who', w);
+  updateBadge(); renderCheckBtn(); updateDrw();
+  updateSWCfg();
+}
+
+// ─── 精誠期間 ───
+function saveSP() {
+  const name  = document.getElementById('sp-name').value.trim();
+  const start = document.getElementById('sp-start').value;
+  const end   = document.getElementById('sp-end').value;
+  const msg   = document.getElementById('sp-msg');
+
+  if (!name||!start||!end) { flash(msg,'⚠️ 名前・開始日・終了日を入力してください','#f87171'); return; }
+  if (start > end)          { flash(msg,'⚠️ 終了日は開始日より後にしてください','#f87171'); return; }
+
+  db.ref('seijou_kikan').set({ name, start, end });
+  flash(msg,'✓ 精誠期間を設定しました！','#4ade80');
+}
+
+function clearSP() {
+  if (confirm('精誠期間の設定を削除しますか？')) {
+    db.ref('seijou_kikan').remove();
+    ['sp-name','sp-start','sp-end'].forEach(id => document.getElementById(id).value='');
+  }
+}
+
+function flash(el, txt, color) {
+  el.textContent = txt; el.style.color = color;
+  setTimeout(() => { el.textContent=''; }, 3000);
+}
+
+// ─── Notifications ───
+async function toggleNotif() {
+  const msg = document.getElementById('notif-msg');
+  if (!notifOn) {
+    if (!('Notification' in window)) { flash(msg,'⚠️ このブラウザは通知非対応です','#f87171'); return; }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { flash(msg,'⚠️ 通知が拒否されました。ブラウザ設定で許可してください','#f87171'); return; }
+    notifOn = true; localStorage.setItem('notif_on','true');
+    flash(msg,'✓ 通知を有効にしました','#4ade80');
+    regPeriodicSync();
+  } else {
+    notifOn = false; localStorage.setItem('notif_on','false');
+    flash(msg,'通知を無効にしました','var(--txt-2)');
+  }
+  updateNotifUI(); updateSWCfg();
+}
+
+function saveRemTime() {
+  localStorage.setItem('rem_time', document.getElementById('rem-time').value);
+  updateSWCfg();
+}
+
+function updateNotifUI() {
+  document.getElementById('notif-tog').className = 'toggle' + (notifOn ? ' on' : '');
+  document.getElementById('time-row').style.display = notifOn ? 'flex' : 'none';
+}
+
+async function regPeriodicSync() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    if ('periodicSync' in reg) {
+      await reg.periodicSync.register('reading-reminder', { minInterval: 8*3600*1000 });
+    }
+  } catch {}
+}
+
+function updateSWCfg() {
+  if (!navigator.serviceWorker?.controller) return;
+  navigator.serviceWorker.controller.postMessage({
+    type:'SET_CFG', databaseURL:'https://genri-daily-memo-default-rtdb.asia-southeast1.firebasedatabase.app',
+    who, name:PEOPLE[who].name,
+    remHour:(localStorage.getItem('rem_time')||'07:00').split(':')[0],
+    notifOn
+  });
+}
+
+// ═══════════════════════════════════
+// SERVICE WORKER
+// ═══════════════════════════════════
+async function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    await navigator.serviceWorker.register('./sw.js');
+    navigator.serviceWorker.ready.then(() => updateSWCfg());
+  } catch {}
+}
+
+// ═══════════════════════════════════
+// BOOT
+// ═══════════════════════════════════
+(function boot() {
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyD0gL-QTPNGD3MLqaat3zGAvjamqvEwBHI",
+    authDomain: "genri-daily-memo.firebaseapp.com",
+    databaseURL: "https://genri-daily-memo-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "genri-daily-memo",
+    storageBucket: "genri-daily-memo.firebasestorage.app",
+    messagingSenderId: "265666084439",
+    appId: "1:265666084439:web:58ba1f475b3eb030c02d12",
+    measurementId: "G-1GBK14KD8W"
+  };
+  initFB(FIREBASE_CONFIG);
+})();
+</script>
+</body>
+</html>

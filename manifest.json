@@ -1,0 +1,26 @@
+{
+  "name": "原理講論 訓読トラッカー",
+  "short_name": "訓読",
+  "description": "毎日の原理講論訓読を夫婦で記録・共有するアプリ",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#080d1a",
+  "theme_color": "#080d1a",
+  "orientation": "portrait-primary",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23080d1a'/%3E%3Crect x='50' y='38' width='92' height='116' rx='10' fill='%23f59e0b'/%3E%3Crect x='46' y='38' width='10' height='116' rx='5' fill='%23d97706'/%3E%3Crect x='66' y='68' width='52' height='8' rx='4' fill='%23080d1a'/%3E%3Crect x='66' y='90' width='52' height='8' rx='4' fill='%23080d1a'/%3E%3Crect x='66' y='112' width='36' height='8' rx='4' fill='%23080d1a'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%23080d1a'/%3E%3Crect x='135' y='100' width='242' height='312' rx='24' fill='%23f59e0b'/%3E%3Crect x='122' y='100' width='28' height='312' rx='14' fill='%23d97706'/%3E%3Crect x='175' y='180' width='140' height='20' rx='10' fill='%23080d1a'/%3E%3Crect x='175' y='236' width='140' height='20' rx='10' fill='%23080d1a'/%3E%3Crect x='175' y='292' width='96' height='20' rx='10' fill='%23080d1a'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["lifestyle", "productivity"]
+}
