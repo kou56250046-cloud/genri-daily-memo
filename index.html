@@ -485,12 +485,75 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) opacity(.4)
   100%{transform:scale(1)}
 }
 .do-bounce{animation:checkBounce .6s cubic-bezier(.34,1.56,.64,1) forwards}
+
+/* ====== TIME THEMES ====== */
+body.theme-morning::before{background:radial-gradient(ellipse 90% 60% at 20% 25%,rgba(25,40,90,.8) 0%,transparent 65%),radial-gradient(ellipse 70% 50% at 80% 72%,rgba(8,12,50,.85) 0%,transparent 65%),linear-gradient(150deg,#080f22 0%,#0d1830 45%,#100e2c 100%)}
+body.theme-afternoon::before{background:radial-gradient(ellipse 90% 60% at 15% 20%,rgba(12,28,72,.82) 0%,transparent 65%),radial-gradient(ellipse 70% 50% at 85% 75%,rgba(6,10,42,.88) 0%,transparent 65%),linear-gradient(150deg,#060d1a 0%,#0a1222 45%,#0d1030 100%)}
+
+/* ====== CHECK FLASH ====== */
+.check-flash{position:fixed;inset:0;z-index:250;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.check-flash.k-flash{background:radial-gradient(ellipse at center,rgba(96,165,250,.62) 0%,transparent 68%)}
+.check-flash.m-flash{background:radial-gradient(ellipse at center,rgba(244,114,182,.62) 0%,transparent 68%)}
+.flash-msg{font-size:28px;font-weight:900;text-align:center;text-shadow:0 2px 20px rgba(0,0,0,.6)}
+@keyframes flashAnim{0%{opacity:0;transform:scale(.82)}18%{opacity:1;transform:scale(1.06)}40%{opacity:1;transform:scale(1)}75%{opacity:1}100%{opacity:0}}
+.check-flash.show{animation:flashAnim .95s ease forwards}
+
+/* ====== BOTH DONE OVERLAY ====== */
+.both-done-overlay{position:fixed;inset:0;z-index:220;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0}
+@keyframes bdPop{0%{opacity:0}12%{opacity:1}75%{opacity:1}100%{opacity:0}}
+.both-done-overlay.show{animation:bdPop 3.6s ease forwards;pointer-events:auto}
+.bd-card{background:rgba(8,13,26,.93);border:2px solid var(--gold);border-radius:var(--r);padding:30px 40px;text-align:center;backdrop-filter:var(--blur);box-shadow:0 0 60px rgba(245,158,11,.35);transform:scale(.88);transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+.both-done-overlay.show .bd-card{transform:scale(1)}
+.bd-title{font-size:24px;font-weight:900;margin-bottom:8px}
+.bd-sub{font-size:14px;color:var(--gold);font-weight:600}
+.bd-halo{position:absolute;width:220px;height:220px;border-radius:50%;border:2px solid rgba(245,158,11,.4);top:50%;left:50%;transform:translate(-50%,-50%) scale(0)}
+@keyframes haloExp{0%{transform:translate(-50%,-50%) scale(0);opacity:.8}100%{transform:translate(-50%,-50%) scale(3.5);opacity:0}}
+.both-done-overlay.show .bd-halo{animation:haloExp 3.6s ease forwards}
+
+/* ====== NUDGE ====== */
+.nudge-banner{position:fixed;bottom:0;left:0;right:0;z-index:160;max-width:480px;margin:0 auto;padding:0 14px 16px;transform:translateY(110%);transition:transform .4s cubic-bezier(.34,1.4,.64,1);pointer-events:none}
+.nudge-banner.show{transform:translateY(0);pointer-events:auto}
+.nudge-card{background:rgba(18,26,48,.96);border:1px solid var(--border-hi);border-radius:var(--r);padding:14px 16px;backdrop-filter:var(--blur);display:flex;align-items:center;gap:10px;box-shadow:0 -4px 30px rgba(0,0,0,.5)}
+.nudge-txt{flex:1}
+.nudge-txt-main{font-size:15px;font-weight:700}
+.nudge-txt-from{font-size:11px;color:var(--txt-2);margin-top:2px}
+.nudge-x{background:none;border:none;color:var(--txt-3);font-size:20px;cursor:pointer;padding:2px 6px;line-height:1}
+.nudge-x:hover{color:var(--txt)}
+.nudge-send-btn{background:none;border:1px solid var(--border);border-radius:100px;color:var(--txt-3);font-size:11px;font-family:var(--font);padding:4px 10px;cursor:pointer;white-space:nowrap;transition:all .2s;display:inline-flex;align-items:center;gap:4px;margin-top:2px}
+.nudge-send-btn:hover{border-color:var(--border-hi);color:var(--txt-2)}
+
+/* ====== STAMP ====== */
+.stamp-area{min-height:26px;margin-top:6px;position:relative;display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap}
+.stamp-pick-btn{background:none;border:1px solid var(--border);border-radius:100px;font-size:14px;padding:2px 7px;cursor:pointer;transition:all .15s;line-height:1.4}
+.stamp-pick-btn:hover{transform:scale(1.28);background:rgba(255,255,255,.06)}
+.stamp-display{font-size:22px;animation:stampPop .4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes stampPop{from{transform:scale(0)}to{transform:scale(1)}}
+.stamp-float-el{position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:26px;pointer-events:none;animation:stampFloat 1.8s ease forwards}
+@keyframes stampFloat{0%{opacity:1;transform:translateX(-50%) translateY(0) scale(.8)}30%{opacity:1;transform:translateX(-50%) translateY(-22px) scale(1.3)}100%{opacity:0;transform:translateX(-50%) translateY(-70px) scale(.9)}}
+
+/* ====== CHARACTER BUTTON ====== */
+.check-btn.husband-btn{background:linear-gradient(135deg,#93c5fd 0%,#60a5fa 50%,#3b82f6 100%);color:#fff;box-shadow:0 4px 28px rgba(96,165,250,.4);animation:btnPulseK 2.5s ease-in-out infinite}
+.check-btn.wife-btn{background:linear-gradient(135deg,#f9a8d4 0%,#f472b6 50%,#ec4899 100%);color:#fff;box-shadow:0 4px 28px rgba(244,114,182,.4);animation:btnPulseM 2.5s ease-in-out infinite}
+@keyframes btnPulseK{0%,100%{box-shadow:0 4px 28px rgba(96,165,250,.35)}50%{box-shadow:0 4px 42px rgba(96,165,250,.65)}}
+@keyframes btnPulseM{0%,100%{box-shadow:0 4px 28px rgba(244,114,182,.35)}50%{box-shadow:0 4px 42px rgba(244,114,182,.65)}}
+
+/* ====== MONTHLY GRAPH ====== */
+.graph-outer{display:flex;gap:6px;align-items:flex-end;height:90px;margin-bottom:6px}
+.graph-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.graph-bars{display:flex;gap:2px;align-items:flex-end;height:72px;justify-content:center}
+.graph-bar{width:8px;border-radius:4px 4px 0 0;min-height:2px;transition:height 1s cubic-bezier(.4,0,.2,1)}
+.graph-bar.k{background:var(--k)}
+.graph-bar.m{background:var(--m)}
+.graph-lbl{font-size:9px;color:var(--txt-3);text-align:center}
 </style>
 </head>
 <body>
 
 <div class="conn-bar" id="conn-bar">📡 オフライン — 再接続を待っています</div>
 <div class="confetti-wrap" id="confetti-wrap"></div>
+<div class="check-flash" id="check-flash"><div class="flash-msg" id="flash-msg"></div></div>
+<div class="both-done-overlay" id="both-done-overlay"><div class="bd-halo"></div><div class="bd-card"><div class="bd-title">🔥 今日も2人で完了！</div><div class="bd-sub">こうへい &amp; まりあ ✨</div></div></div>
+<div class="nudge-banner" id="nudge-banner"><div class="nudge-card"><div class="nudge-txt"><div class="nudge-txt-main" id="nudge-txt-main"></div><div class="nudge-txt-from" id="nudge-txt-from"></div></div><button class="nudge-x" onclick="closeNudge()">×</button></div></div>
 
 <!-- ==================== SETUP ==================== -->
 <div id="screen-setup" class="screen">
@@ -573,11 +636,13 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) opacity(.4)
           <div class="p-name">こうへい</div>
           <span class="p-icon" id="pi-k">○</span>
           <div class="p-txt" id="pt-k">まだ</div>
+          <div class="stamp-area" id="stamp-k"></div>
         </div>
         <div class="p-stat" id="ps-m">
           <div class="p-name">まりあ</div>
           <span class="p-icon" id="pi-m">○</span>
           <div class="p-txt" id="pt-m">まだ</div>
+          <div class="stamp-area" id="stamp-m"></div>
         </div>
       </div>
     </div>
@@ -623,6 +688,16 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) opacity(.4)
         <button class="cal-nav" id="cal-next" onclick="moveCal(1)">›</button>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-legend">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--k)"></div>こうへい</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--m)"></div>まりあ</div>
+      </div>
+    </div>
+
+    <!-- Monthly Graph -->
+    <div class="card">
+      <div class="c-label">月間達成グラフ（直近6ヶ月）</div>
+      <div class="graph-outer" id="graph-wrap"></div>
       <div class="cal-legend">
         <div class="leg-item"><div class="leg-dot" style="background:var(--k)"></div>こうへい</div>
         <div class="leg-item"><div class="leg-dot" style="background:var(--m)"></div>まりあ</div>
@@ -708,6 +783,9 @@ let sp = null;                // {name, start, end} | null
 let calY, calM;               // calendar view
 let notifOn = false;
 let firstLoad = true;
+let _reactFromHusband = null; // スタンプ: husbandが送ったリアクション
+let _reactFromWife    = null; // スタンプ: wifeが送ったリアクション
+let _nudgeCooldown    = false;
 
 const PEOPLE = {
   husband: { name: 'こうへい', emoji: '👨' },
@@ -812,11 +890,27 @@ function startApp() {
   updateNotifUI();
   updateDrw();
 
+  applyTimeTheme();
+
   // Firebase listeners
   db.ref('readings').on('value', snap => {
     const d = snap.val() || {};
+    const today = todayStr();
+    const prevKDone = reads.husband.has(today);
+    const prevMDone = reads.wife.has(today);
     reads.husband = new Set(Object.keys(d.husband || {}));
     reads.wife    = new Set(Object.keys(d.wife    || {}));
+    if (who && !firstLoad) {
+      const pKey = who === 'husband' ? 'wife' : 'husband';
+      const prevP = pKey === 'husband' ? prevKDone : prevMDone;
+      const nowP  = reads[pKey].has(today);
+      if (!prevP && nowP && !reads[who].has(today) && Notification.permission === 'granted') {
+        new Notification('原理講論 訓読', {
+          body: PEOPLE[pKey].name + 'が先に読み終わりました！あなたはまだですよ📖',
+          icon: './icon-192.png'
+        });
+      }
+    }
     renderAll();
     if (firstLoad) firstLoad = false;
   });
@@ -830,6 +924,26 @@ function startApp() {
       document.getElementById('sp-start').value = sp.start || '';
       document.getElementById('sp-end').value   = sp.end   || '';
     }
+  });
+
+  // リアクション (スタンプ)
+  db.ref('reactions/'+todayStr()).on('value', snap => {
+    const d = snap.val() || {};
+    _reactFromHusband = d.husband || null;
+    _reactFromWife    = d.wife    || null;
+    renderStamps();
+  });
+
+  // ヌッジ受信
+  db.ref('nudge/'+who).on('value', snap => {
+    const d = snap.val();
+    if (!d || !d.text) return;
+    if (Date.now() - (d.ts || 0) > 10 * 60 * 1000) { db.ref('nudge/'+who).remove(); return; }
+    document.getElementById('nudge-txt-main').textContent = d.text;
+    document.getElementById('nudge-txt-from').textContent = (PEOPLE[d.from]?.name || '') + 'より';
+    const banner = document.getElementById('nudge-banner');
+    banner.classList.add('show');
+    setTimeout(() => { if (banner.classList.contains('show')) closeNudge(); }, 6000);
   });
 
   registerSW();
@@ -855,13 +969,15 @@ function renderAll() {
   setPersonStatus('k', kDone, 'husband');
   setPersonStatus('m', mDone, 'wife');
 
-  // Confetti if both just completed
-  if (!firstLoad && bothNow && !_prevBoth) launchConfetti();
+  // Confetti + overlay if both just completed
+  if (!firstLoad && bothNow && !_prevBoth) { launchConfetti(); triggerBothDone(); }
   _prevBoth = bothNow;
 
   renderCheckBtn();
   renderStreak();
   renderCal();
+  renderGraph();
+  renderStamps();
 }
 
 function setPersonStatus(id, done, who2) {
@@ -894,8 +1010,8 @@ function renderCheckBtn() {
     btn.textContent = PEOPLE[who].emoji + ' 読んだ！ ✓';
     btn.className = 'check-btn ' + cls;
   } else {
-    btn.textContent = '今日の訓読を完了する 📖';
-    btn.className = 'check-btn';
+    btn.textContent = PEOPLE[who].emoji + ' 今日の訓読を完了する';
+    btn.className = 'check-btn ' + (who === 'husband' ? 'husband-btn' : 'wife-btn');
   }
 }
 
@@ -1080,6 +1196,7 @@ function doCheck(e) {
   setTimeout(() => rp.remove(), 700);
 
   db.ref(`readings/${who}/${todayStr()}`).set(true);
+  flashScreen();
 }
 
 function undoCheck() {
@@ -1209,6 +1326,147 @@ async function registerSW() {
     await navigator.serviceWorker.register('./sw.js');
     navigator.serviceWorker.ready.then(() => updateSWCfg());
   } catch {}
+}
+
+// ═══════════════════════════════════
+// TIME THEME
+// ═══════════════════════════════════
+function applyTimeTheme() {
+  const h = new Date().getHours();
+  document.body.classList.remove('theme-morning','theme-afternoon');
+  if (h >= 5 && h < 12) document.body.classList.add('theme-morning');
+  else if (h >= 12 && h < 18) document.body.classList.add('theme-afternoon');
+}
+
+// ═══════════════════════════════════
+// CHECK FLASH
+// ═══════════════════════════════════
+function flashScreen() {
+  const el = document.getElementById('check-flash');
+  const mg = document.getElementById('flash-msg');
+  el.className = 'check-flash '+(who==='husband'?'k-flash':'m-flash');
+  mg.textContent = PEOPLE[who].emoji+' 今日も読んだ！✨';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 980);
+}
+
+// ═══════════════════════════════════
+// BOTH DONE OVERLAY
+// ═══════════════════════════════════
+function triggerBothDone() {
+  const ov = document.getElementById('both-done-overlay');
+  ov.classList.remove('show');
+  void ov.offsetWidth;
+  ov.classList.add('show');
+  setTimeout(()=>ov.classList.remove('show'), 3700);
+}
+
+// ═══════════════════════════════════
+// NUDGE
+// ═══════════════════════════════════
+const NUDGE_MSGS = [
+  '📖 まだ読んでないよ！',
+  '✨ 一緒に読もう！',
+  '🔥 早く読んで〜！',
+  '💪 さあ、訓読の時間だよ！',
+  '📚 今日も頑張ろう！',
+];
+
+function sendNudge() {
+  if (_nudgeCooldown) return;
+  _nudgeCooldown = true;
+  setTimeout(()=>_nudgeCooldown=false, 60000);
+  const pKey = who === 'husband' ? 'wife' : 'husband';
+  const text = NUDGE_MSGS[Math.floor(Math.random()*NUDGE_MSGS.length)];
+  db.ref('nudge/'+pKey).set({ from: who, text, ts: Date.now() });
+}
+
+function closeNudge() {
+  document.getElementById('nudge-banner').classList.remove('show');
+  db.ref('nudge/'+who).remove();
+}
+
+// ═══════════════════════════════════
+// STAMP REACTIONS
+// ═══════════════════════════════════
+const STAMP_LIST = ['👍','✨','🔥','💪','❤️'];
+
+function sendStamp(emoji) {
+  db.ref('reactions/'+todayStr()+'/'+who).set(emoji);
+  const areaId = who === 'husband' ? 'stamp-m' : 'stamp-k';
+  const area = document.getElementById(areaId);
+  const el = document.createElement('span');
+  el.className = 'stamp-float-el'; el.textContent = emoji;
+  area.appendChild(el);
+  setTimeout(()=>el.remove(), 1900);
+}
+
+function renderStamps() {
+  if (!who) return;
+  const today = todayStr();
+  const kDone = reads.husband.has(today);
+  const mDone = reads.wife.has(today);
+  const areaK = document.getElementById('stamp-k');
+  const areaM = document.getElementById('stamp-m');
+  if (!areaK || !areaM) return;
+
+  // こうへいカード: wifeが送ったリアクション(_reactFromWife) または ヌッジボタン
+  if (kDone) {
+    if (_reactFromWife) {
+      areaK.innerHTML = `<span class="stamp-display">${_reactFromWife}</span>`;
+    } else if (who === 'wife') {
+      areaK.innerHTML = STAMP_LIST.map(e=>`<button class="stamp-pick-btn" onclick="sendStamp('${e}')">${e}</button>`).join('');
+    } else {
+      areaK.innerHTML = '';
+    }
+  } else if (who === 'wife') {
+    areaK.innerHTML = `<button class="nudge-send-btn" onclick="sendNudge()">💬 つつく</button>`;
+  } else {
+    areaK.innerHTML = '';
+  }
+
+  // まりあカード: husbandが送ったリアクション(_reactFromHusband) または ヌッジボタン
+  if (mDone) {
+    if (_reactFromHusband) {
+      areaM.innerHTML = `<span class="stamp-display">${_reactFromHusband}</span>`;
+    } else if (who === 'husband') {
+      areaM.innerHTML = STAMP_LIST.map(e=>`<button class="stamp-pick-btn" onclick="sendStamp('${e}')">${e}</button>`).join('');
+    } else {
+      areaM.innerHTML = '';
+    }
+  } else if (who === 'husband') {
+    areaM.innerHTML = `<button class="nudge-send-btn" onclick="sendNudge()">💬 つつく</button>`;
+  } else {
+    areaM.innerHTML = '';
+  }
+}
+
+// ═══════════════════════════════════
+// MONTHLY GRAPH
+// ═══════════════════════════════════
+function renderGraph() {
+  const wrap = document.getElementById('graph-wrap');
+  if (!wrap) return;
+  const now = jstNow();
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    let m = now.getUTCMonth() - i;
+    let y = now.getUTCFullYear();
+    if (m < 0) { m += 12; y--; }
+    months.push({ y, m });
+  }
+  wrap.innerHTML = months.map(({ y, m }) => {
+    const dim = new Date(Date.UTC(y, m+1, 0)).getUTCDate();
+    let kC = 0, mC = 0;
+    for (let d = 1; d <= dim; d++) {
+      const ds = `${y}-${pad(m+1)}-${pad(d)}`;
+      if (reads.husband.has(ds)) kC++;
+      if (reads.wife.has(ds)) mC++;
+    }
+    const kH = Math.max(2, Math.round((kC/dim)*72));
+    const mH = Math.max(2, Math.round((mC/dim)*72));
+    return `<div class="graph-col"><div class="graph-bars"><div class="graph-bar k" style="height:${kH}px" title="こうへい ${kC}日"></div><div class="graph-bar m" style="height:${mH}px" title="まりあ ${mC}日"></div></div><div class="graph-lbl">${m+1}月</div></div>`;
+  }).join('');
 }
 
 // ═══════════════════════════════════
