@@ -215,6 +215,20 @@ textarea.cfg-in:focus{border-color:var(--gold)}
    CHECK BUTTON
    ============================================================ */
 .check-wrap{padding:6px 14px 2px;text-align:center}
+.seijou-start-btn{
+  display:block;width:100%;padding:14px 16px;border-radius:100px;
+  background:rgba(245,158,11,.10);border:1.5px solid var(--gold);
+  color:var(--gold);font-family:var(--font);font-size:15px;font-weight:700;
+  cursor:pointer;letter-spacing:.02em;transition:all .25s;
+  margin-bottom:10px;
+}
+.seijou-start-btn:hover{background:rgba(245,158,11,.20)}
+.seijou-start-btn:active{transform:scale(.97)}
+.seijou-start-btn.bgm-on{
+  background:rgba(96,165,250,.12);border-color:var(--k);color:var(--k);
+  animation:btnPulseK 2.5s ease-in-out infinite;
+}
+@keyframes btnPulseK{0%,100%{box-shadow:0 0 0 0 rgba(96,165,250,.3)}50%{box-shadow:0 0 0 8px rgba(96,165,250,0)}}
 .check-btn{
   width:100%;padding:20px 16px;border-radius:100px;border:none;
   cursor:pointer;font-family:var(--font);font-size:16px;font-weight:700;
@@ -686,6 +700,7 @@ body.theme-afternoon::before{background:radial-gradient(ellipse 90% 60% at 15% 2
 
     <!-- Check button -->
     <div class="check-wrap">
+      <button class="seijou-start-btn" id="start-btn" onclick="startSeijou()">🎵 精誠を開始する</button>
       <button class="check-btn" id="check-btn" onclick="doCheck(event)">
         今日の訓読を完了する 📖
       </button>
@@ -1260,6 +1275,14 @@ function doCheck(e) {
 
   db.ref(`readings/${who}/${todayStr()}`).set(true);
   flashScreen();
+  // 完了と同時にBGMを停止
+  const bgm = document.getElementById('bgm');
+  if (bgm && !bgm.paused) {
+    bgm.pause();
+    bgm.currentTime = 0;
+    updateBGMBtn();
+    updateStartBtn();
+  }
 }
 
 function undoCheck() {
@@ -1426,6 +1449,31 @@ function updateBGMBtn() {
   } else {
     btn.textContent = '⏸ 停止';
     btn.className = 'bgm-btn playing';
+  }
+  updateStartBtn();
+}
+
+function startSeijou() {
+  const bgm = document.getElementById('bgm');
+  if (bgm.paused) {
+    bgm.play().catch(()=>{});
+  } else {
+    bgm.pause();
+    bgm.currentTime = 0;
+  }
+  updateBGMBtn();
+}
+
+function updateStartBtn() {
+  const bgm = document.getElementById('bgm');
+  const btn = document.getElementById('start-btn');
+  if (!btn) return;
+  if (bgm.paused) {
+    btn.textContent = '🎵 精誠を開始する';
+    btn.className = 'seijou-start-btn';
+  } else {
+    btn.textContent = '🎵 BGM再生中... (タップで停止)';
+    btn.className = 'seijou-start-btn bgm-on';
   }
 }
 
