@@ -502,20 +502,32 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) opacity(.4)
 
 /* ====== TIME THEMES ====== */
 /* 朝 (5–11時): 暖かいアンバー/オレンジ — 夜明けの温かみ */
-body.theme-morning{--bg-1:#130c09;--card:rgba(30,16,8,.55);--card-hi:rgba(40,22,10,.65)}
+body.theme-morning{
+  --bg-1:#241408;
+  --card:rgba(255,180,80,.08);
+  --card-hi:rgba(255,180,80,.14);
+  --border:rgba(255,180,80,.14);
+  --border-hi:rgba(255,180,80,.28);
+}
 body.theme-morning::before{
   background:
-    radial-gradient(ellipse 140% 70% at 50% -25%,rgba(220,100,20,.24) 0%,transparent 55%),
-    radial-gradient(ellipse 80% 50% at 0% 100%,rgba(160,50,30,.18) 0%,transparent 50%),
-    linear-gradient(168deg,#150c07 0%,#100c1a 55%,#08091e 100%)
+    radial-gradient(ellipse 160% 80% at 50% -10%,rgba(255,150,40,.50) 0%,rgba(200,80,10,.20) 50%,transparent 70%),
+    radial-gradient(ellipse 100% 60% at 5% 95%,rgba(200,70,20,.25) 0%,transparent 55%),
+    linear-gradient(165deg,#261408 0%,#1c1016 55%,#0f0c22 100%)
 }
-/* 昼 (12–17時): クールなサファイアブルー — 清らかな昼間 */
-body.theme-afternoon{--bg-1:#050e1c;--card:rgba(8,20,50,.55);--card-hi:rgba(12,28,65,.65)}
+/* 昼 (12–17時): クールなスカイブルー — 清らかな昼間 */
+body.theme-afternoon{
+  --bg-1:#071a2e;
+  --card:rgba(60,160,255,.08);
+  --card-hi:rgba(60,160,255,.14);
+  --border:rgba(60,160,255,.14);
+  --border-hi:rgba(60,160,255,.28);
+}
 body.theme-afternoon::before{
   background:
-    radial-gradient(ellipse 110% 65% at 50% -15%,rgba(20,90,200,.20) 0%,transparent 55%),
-    radial-gradient(ellipse 70% 50% at 95% 90%,rgba(10,50,140,.22) 0%,transparent 50%),
-    linear-gradient(168deg,#050d1a 0%,#07121f 55%,#050b18 100%)
+    radial-gradient(ellipse 160% 80% at 50% -10%,rgba(40,150,255,.42) 0%,rgba(20,90,200,.20) 50%,transparent 70%),
+    radial-gradient(ellipse 100% 60% at 95% 90%,rgba(20,100,220,.25) 0%,transparent 55%),
+    linear-gradient(165deg,#071a2e 0%,#091828 55%,#060f1e 100%)
 }
 /* 夜 (18–4時): デフォルト — 深い宇宙紫 (既存 body::before) */
 
